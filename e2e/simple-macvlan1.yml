@@ -38,8 +38,6 @@ spec:
     command: ["/bin/sleep", "10000"]
     securityContext:
       privileged: true
-  nodeSelector:
-    kubernetes.io/hostname: kind-worker
 ---
 apiVersion: v1
 kind: Pod
@@ -59,5 +57,3 @@ spec:
     command: ["/bin/sleep", "10000"]
     securityContext:
       privileged: true
-  nodeSelector:
-    kubernetes.io/hostname: kind-worker2

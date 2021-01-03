@@ -251,33 +251,33 @@ func GetGatewayFromResult(result *current.Result) []net.IP {
 
 // LoadNetConf converts inputs (i.e. stdin) to NetConf
 func LoadNetConf(bytes []byte) (*NetConf, error) {
-	netconf := &NetConf{}
+	netConf := &NetConf{}
 
 	logging.Debugf("LoadNetConf: %s", string(bytes))
-	if err := json.Unmarshal(bytes, netconf); err != nil {
+	if err := json.Unmarshal(bytes, netConf); err != nil {
 		return nil, logging.Errorf("LoadNetConf: failed to load netconf: %v", err)
 	}
 
 	// Logging
-	if netconf.LogFile != "" {
-		logging.SetLogFile(netconf.LogFile)
+	if netConf.LogFile != "" {
+		logging.SetLogFile(netConf.LogFile)
 	}
-	if netconf.LogLevel != "" {
-		logging.SetLogLevel(netconf.LogLevel)
+	if netConf.LogLevel != "" {
+		logging.SetLogLevel(netConf.LogLevel)
 	}
 
 	// Parse previous result
-	if netconf.RawPrevResult != nil {
-		resultBytes, err := json.Marshal(netconf.RawPrevResult)
+	if netConf.RawPrevResult != nil {
+		resultBytes, err := json.Marshal(netConf.RawPrevResult)
 		if err != nil {
 			return nil, logging.Errorf("LoadNetConf: could not serialize prevResult: %v", err)
 		}
-		res, err := version.NewResult(netconf.CNIVersion, resultBytes)
+		res, err := version.NewResult(netConf.CNIVersion, resultBytes)
 		if err != nil {
 			return nil, logging.Errorf("LoadNetConf: could not parse prevResult: %v", err)
 		}
-		netconf.RawPrevResult = nil
-		netconf.PrevResult, err = current.NewResultFromResult(res)
+		netConf.RawPrevResult = nil
+		netConf.PrevResult, err = current.NewResultFromResult(res)
 		if err != nil {
 			return nil, logging.Errorf("LoadNetConf: could not convert result to current version: %v", err)
 		}
@@ -289,54 +289,54 @@ func LoadNetConf(bytes []byte) (*NetConf, error) {
 	// the master plugin. Kubernetes CRD delegates are then appended to
 	// the existing delegate list and all delegates executed in-order.
 
-	if len(netconf.RawDelegates) == 0 && netconf.ClusterNetwork == "" {
+	if len(netConf.RawDelegates) == 0 && netConf.ClusterNetwork == "" {
 		return nil, logging.Errorf("LoadNetConf: at least one delegate/defaultNetwork must be specified")
 	}
 
-	if netconf.CNIDir == "" {
-		netconf.CNIDir = defaultCNIDir
+	if netConf.CNIDir == "" {
+		netConf.CNIDir = defaultCNIDir
 	}
 
-	if netconf.ConfDir == "" {
-		netconf.ConfDir = defaultConfDir
+	if netConf.ConfDir == "" {
+		netConf.ConfDir = defaultConfDir
 	}
 
-	if netconf.BinDir == "" {
-		netconf.BinDir = defaultBinDir
+	if netConf.BinDir == "" {
+		netConf.BinDir = defaultBinDir
 	}
 
-	if netconf.ReadinessIndicatorFile == "" {
-		netconf.ReadinessIndicatorFile = defaultReadinessIndicatorFile
+	if netConf.ReadinessIndicatorFile == "" {
+		netConf.ReadinessIndicatorFile = defaultReadinessIndicatorFile
 	}
 
-	if len(netconf.SystemNamespaces) == 0 {
-		netconf.SystemNamespaces = []string{"kube-system"}
+	if len(netConf.SystemNamespaces) == 0 {
+		netConf.SystemNamespaces = []string{"kube-system"}
 	}
 
-	if netconf.MultusNamespace == "" {
-		netconf.MultusNamespace = defaultMultusNamespace
+	if netConf.MultusNamespace == "" {
+		netConf.MultusNamespace = defaultMultusNamespace
 	}
 
 	// setup namespace isolation
-	if netconf.RawNonIsolatedNamespaces == "" {
-		netconf.NonIsolatedNamespaces = []string{defaultNonIsolatedNamespace}
+	if netConf.RawNonIsolatedNamespaces == "" {
+		netConf.NonIsolatedNamespaces = []string{defaultNonIsolatedNamespace}
 	} else {
 		// Parse the comma separated list
-		nonisolated := strings.Split(netconf.RawNonIsolatedNamespaces, ",")
+		nonisolated := strings.Split(netConf.RawNonIsolatedNamespaces, ",")
 		// Cleanup the whitespace
 		for i, nonv := range nonisolated {
 			nonisolated[i] = strings.TrimSpace(nonv)
 		}
-		netconf.NonIsolatedNamespaces = nonisolated
+		netConf.NonIsolatedNamespaces = nonisolated
 	}
 
 	// get RawDelegates and put delegates field
-	if netconf.ClusterNetwork == "" {
+	if netConf.ClusterNetwork == "" {
 		// for Delegates
-		if len(netconf.RawDelegates) == 0 {
+		if len(netConf.RawDelegates) == 0 {
 			return nil, logging.Errorf("LoadNetConf: at least one delegate must be specified")
 		}
-		for idx, rawConf := range netconf.RawDelegates {
+		for idx, rawConf := range netConf.RawDelegates {
 			bytes, err := json.Marshal(rawConf)
 			if err != nil {
 				return nil, logging.Errorf("LoadNetConf: error marshalling delegate %d config: %v", idx, err)
@@ -345,15 +345,15 @@ func LoadNetConf(bytes []byte) (*NetConf, error) {
 			if err != nil {
 				return nil, logging.Errorf("LoadNetConf: failed to load delegate %d config: %v", idx, err)
 			}
-			netconf.Delegates = append(netconf.Delegates, delegateConf)
+			netConf.Delegates = append(netConf.Delegates, delegateConf)
 		}
-		netconf.RawDelegates = nil
+		netConf.RawDelegates = nil
 
 		// First delegate is always the master plugin
-		netconf.Delegates[0].MasterPlugin = true
+		netConf.Delegates[0].MasterPlugin = true
 	}
 
-	return netconf, nil
+	return netConf, nil
 }
 
 // AddDelegates appends the new delegates to the delegates list

@@ -23,11 +23,10 @@ import (
 	"fmt"
 	"os"
 
-	"gopkg.in/intel/multus-cni.v3/pkg/multus"
 	"github.com/containernetworking/cni/pkg/skel"
 	cniversion "github.com/containernetworking/cni/pkg/version"
+	"gopkg.in/intel/multus-cni.v3/pkg/multus"
 )
-
 
 func main() {
 
@@ -55,6 +54,10 @@ func main() {
 		func(args *skel.CmdArgs) error {
 			return multus.CmdCheck(args, nil, nil)
 		},
-		func(args *skel.CmdArgs) error { return multus.CmdDel(args, nil, nil) },
-		cniversion.All, "meta-plugin that delegates to other CNI plugins")
+		func(args *skel.CmdArgs) error {
+			return multus.CmdDel(args, nil, nil)
+		},
+		cniversion.All,
+		"meta-plugin that delegates to other CNI plugins",
+	)
 }
