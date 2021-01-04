@@ -23,6 +23,7 @@ import (
 	"net"
 	"os"
 	"path/filepath"
+	"sort"
 	"strings"
 	"time"
 
@@ -90,17 +91,14 @@ func getIfname(delegate *types.DelegateNetConf, argif string, idx int) string {
 	if delegate.IfnameRequest != "" {
 		return delegate.IfnameRequest
 	}
-	if delegate.MasterPlugin {
-		// master plugin always uses the CNI-provided interface name
-		return argif
-	}
+	// if delegate.MasterPlugin {
+	// 	// master plugin always uses the CNI-provided interface name
+	// 	return argif
+	// }
 
 	// Otherwise construct a unique interface name from the delegate's
 	// position in the delegate list
-	if idx == 0 {
-		return fmt.Sprintf("ens%d", idx)
-	}
-	return fmt.Sprintf("eth%d", idx-1)
+	return fmt.Sprintf("eth%d", idx)
 }
 
 func getDelegateDeviceInfo(delegate *types.DelegateNetConf, runtimeConf *libcni.RuntimeConf) (*nettypes.DeviceInfo, error) {
@@ -584,7 +582,13 @@ func CmdAdd(args *skel.CmdArgs, exec invoke.Exec, kubeClient *k8s.ClientInfo) (c
 	var result, tmpResult cnitypes.Result
 	var netStatus []nettypes.NetworkStatus
 	cniArgs := os.Getenv("CNI_ARGS")
+
+	sort.Sort(netConf.Delegates)
+
+	// total := len(netConf.Delegates)
 	for idx, delegate := range netConf.Delegates {
+		// for idx := (total - 1); idx >= 0; idx-- {
+		// delegate := netConf.Delegates[idx]
 		ifName := getIfname(delegate, args.IfName, idx)
 
 		rt, cniDeviceInfoPath := types.CreateCNIRuntimeConf(args, k8sArgs, ifName, netConf.RuntimeConfig, delegate)
@@ -598,6 +602,7 @@ func CmdAdd(args *skel.CmdArgs, exec invoke.Exec, kubeClient *k8s.ClientInfo) (c
 		}
 
 		logging.Debugf("delegates: start pod (%s) ifName(%s) runtimeConfig", pod, ifName, rt)
+
 		tmpResult, err = delegateAdd(exec, kubeClient, pod, ifName, delegate, rt, netConf.BinDir, cniArgs)
 		if err != nil {
 			// If the add failed, tear down all networks we already added

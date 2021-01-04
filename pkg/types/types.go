@@ -17,11 +17,27 @@ package types
 
 import (
 	"net"
+	"sort"
 
 	"github.com/containernetworking/cni/pkg/types"
 	"github.com/containernetworking/cni/pkg/types/current"
 	v1 "k8s.io/api/core/v1"
 )
+
+var _ sort.Interface = &DelegateNetConfs{}
+
+type DelegateNetConfs []*DelegateNetConf
+
+func (d DelegateNetConfs) Len() int { return len(d) }
+
+func (d DelegateNetConfs) Less(i, j int) bool {
+	if d[i].MasterPlugin {
+		return false
+	}
+	return true
+}
+
+func (d DelegateNetConfs) Swap(i, j int) { d[i], d[j] = d[j], d[i] }
 
 // NetConf for cni config file written in json
 type NetConf struct {
@@ -37,7 +53,7 @@ type NetConf struct {
 	BinDir  string `json:"binDir"`
 	// RawDelegates is private to the NetConf class; use Delegates instead
 	RawDelegates    []map[string]interface{} `json:"delegates"`
-	Delegates       []*DelegateNetConf       `json:"-"`
+	Delegates       DelegateNetConfs         `json:"-"`
 	Kubeconfig      string                   `json:"kubeconfig"`
 	ClusterNetwork  string                   `json:"clusterNetwork"`
 	DefaultNetworks []string                 `json:"defaultNetworks"`
