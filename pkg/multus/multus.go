@@ -586,6 +586,7 @@ func CmdAdd(args *skel.CmdArgs, exec invoke.Exec, kubeClient *k8s.ClientInfo) (c
 	cniArgs := os.Getenv("CNI_ARGS")
 	for idx, delegate := range netConf.Delegates {
 		ifName := getIfname(delegate, args.IfName, idx)
+
 		rt, cniDeviceInfoPath := types.CreateCNIRuntimeConf(args, k8sArgs, ifName, netConf.RuntimeConfig, delegate)
 		if cniDeviceInfoPath != "" {
 			err = nadutils.CopyDeviceInfoForCNIFromDP(cniDeviceInfoPath, delegate.ResourceName, delegate.DeviceID)
@@ -596,6 +597,7 @@ func CmdAdd(args *skel.CmdArgs, exec invoke.Exec, kubeClient *k8s.ClientInfo) (c
 			}
 		}
 
+		logging.Debugf("delegates: start pod (%s) ifName(%s) runtimeConfig", pod, ifName, rt)
 		tmpResult, err = delegateAdd(exec, kubeClient, pod, ifName, delegate, rt, netConf.BinDir, cniArgs)
 		if err != nil {
 			// If the add failed, tear down all networks we already added
